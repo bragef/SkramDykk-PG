@@ -1,10 +1,11 @@
 import pymongo
 import pandas as pd
 
+
 def generate_freq(title):
     coll = pymongo.MongoClient().saivasdata.gabrielraw
 
-    l = list(coll.find(projection={"startdatetime":True, "_id":False}).sort([("startdatetime",pymongo.ASCENDING)]))
+    l = list(coll.find(projection={"startdatetime": True, "_id": False}).sort([("startdatetime", pymongo.ASCENDING)]))
     df = pd.DataFrame(l)
     df.index = df['startdatetime']
     ndf = df.groupby(df.index.date).count()
@@ -27,8 +28,8 @@ def generate_freq(title):
 
     return graphs
 
-def generate_datasets(timeframe, datatype, title):
 
+def generate_datasets(timeframe, datatype, title):
     coll = pymongo.MongoClient().saivasdata.resampled
     tempz = []
     y = []
@@ -49,26 +50,69 @@ def generate_datasets(timeframe, datatype, title):
     z = list(map(list, zip(*tempz)))
     y = sorted(y)
 
+    graph = dict(
+        data=[
+            dict(
+                z=z,
+                x=x,
+                y=y,
+                type='heatmap'
+            ),
+        ],
+        layout=dict(
+            title=title
+        )
+    )
+
+    return graph
+
+
+def get_airtemp(title):
+    coll = pymongo.MongoClient().saivasdata.gabrielraw
+
+    l = list(coll.find(projection={"startdatetime": True, "_id": False, "airtemp": True}).sort(
+        [("startdatetime", pymongo.ASCENDING)]))
+
+    df = pd.DataFrame(l)
+
+    df.index = df['startdatetime']
+    df = df.drop('startdatetime', 1).sort_index()
+    df = df.resample('24H').mean()
+
+    # print(df)
     graphs = [
         dict(
             data=[
                 dict(
-                    z=z,
-                    x=x,
-                    y=y,
-                    type='heatmap'
+                    x=df.index,
+                    y=df['airtemp'].tolist(),
+                    type='Scatter',
+                    mode='markers'
                 ),
             ],
             layout=dict(
-                title=title
+                title=title,
+                autosize=True,
+                yaxis=dict(
+                    title="Temperatur"
+                ),
+                height=910,
+                width=1620,
+                xaxis=dict(
+                    title="Dag"
+                ),
+                type="date",
+                autorange=True
             )
         )
     ]
 
     return graphs
 
+
 if __name__ == "__main__":
+    #    print(generate_freq("hallo"))
 
-    print(generate_freq("hallo"))
+    #   print(generate_datasets("3H",'temp','hallo'))
 
-    print(generate_datasets("3H",'temp','hallo'))
+    print(get_airtemp("Lufttemperatur"))

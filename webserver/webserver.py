@@ -8,7 +8,7 @@ import json
 import plotly
 #import pandas as pd
 
-from utils import generate_datasets, generate_freq
+from utils import generate_datasets, generate_freq, get_airtemp
 
 app = Flask(__name__)
 
@@ -33,13 +33,27 @@ def allgraphs():
               {'id': 'turbidity', 'desc': 'turbiditet vs dybde over tid'}, ]:
         graph = generate_datasets('3H', g['id'], g['desc'])
         ids.append(g['id'])
-        graphs.append(graph[0])
+        graphs.append(graph)
 
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
     return render_template('graphview.html',
                            ids=ids,
                            graphJSON=graphJSON)
 
+@app.route('/airtemp')
+def airtempgraphs():
+
+    ids = []
+    graphs = []
+    for g in [{'id': 'Lufttemperatur', 'desc': 'Lufttemperatur gjennomsnitt pr døgn'},]:
+        graph = get_airtemp(g['desc'])
+        ids.append(g['id'])
+        graphs.append(graph[0])
+
+    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+    return render_template('graphview.html',
+                           ids=ids,
+                           graphJSON=graphJSON)
 
 # this will return a json doc with ALL observations resampled and interpolated for a given datatype
 @app.route('/resampled/<dtype>.json')
