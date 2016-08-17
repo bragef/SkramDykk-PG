@@ -11,7 +11,7 @@ At present the server is located at [http://146.185.167.10](http://146.185.167.1
 
 The work is supported by:
 
-* Amalie Skram VGS - [www.avgs.no](http://www.avgs)
+* Amalie Skram VGS - [www.asvgs.no](http://www.asvgs)
 * Universitetet i Bergen - Geofysisk - [www.uib.no](http://www.uib.no)
 * Sensario.no - [www.sensar.io](http://www.sensar.io)
 
