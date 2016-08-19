@@ -67,6 +67,26 @@ def resampledjson(dtype):
     return jsonify(alldives) #json.dumps(alldives, default=json_util.default)
 
 
+# return a json doc with all observations for a given type on a given day
+# the day format must be YYYYMMDD this will return a json doc with ALL observations resampled and interpolated for a given datatype
+@app.route('/resampledday/<dtype>/<thisdate>.json')
+def resampleddayjson(dtype,thisdate):
+    print("hello")
+    year = thisdate[0:4]
+    month = thisdate[4:6]
+    day = thisdate[6:8]
+    start = datetime(int(year),int(month),int(day),0,0,0)
+    end = datetime(int(year),int(month),int(day)+1,0,0,0)
+
+    coll = pymongo.MongoClient().saivasdata.resampled
+    alldives = []
+    # get all dives for a timeframe and datatype
+    divecursor = coll.find({'timeframe':'3H', 'datatype':dtype,'ts':{'$lt': end, '$gte': start}},
+                           {"_id":0, 'timeframe':0}).sort('ts', pymongo.ASCENDING)
+    for dive in divecursor:
+        alldives.append(dive)
+    return jsonify(alldives) #json.dumps(alldives, default=json_util.default)
+
 # this will return a json doc with all raw dives for a given year
 @app.route('/raw/<year>.json')
 def rawjson(year):
