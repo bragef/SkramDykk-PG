@@ -34,11 +34,11 @@ def get_graphs(timeframe, datatype, title):
     z = list(map(list, zip(*tempz)))
     y = sorted(y)
 
-    data = go.Surface(
+    data = [go.Surface(
         z=z,
         x=x,
         y=y,
-    )
+    )]
 
     layout = go.Layout(
         title=title,
