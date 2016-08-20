@@ -34,13 +34,12 @@ def get_graphs(timeframe, datatype, title):
     z = list(map(list, zip(*tempz)))
     y = sorted(y)
 
-    data = [go.Surface(
+    data = go.Surface(
         z=z,
         x=x,
         y=y,
     )
-    ]
-'timeframe'
+
     layout = go.Layout(
         title=title,
         autosize=True,
@@ -66,7 +65,6 @@ def get_graphs(timeframe, datatype, title):
     )
 
     return go.Figure(data=data, layout=layout)
-
 
 ids = []
 graphs = []
