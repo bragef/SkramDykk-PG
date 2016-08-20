@@ -96,8 +96,8 @@ def get_airtemp(title):
                 yaxis=dict(
                     title="Temperatur"
                 ),
-                height=910,
-                width=1620,
+                height=1000,
+                width=1200,
                 xaxis=dict(
                     title="Dag"
                 ),
@@ -113,6 +113,6 @@ def get_airtemp(title):
 if __name__ == "__main__":
     #    print(generate_freq("hallo"))
 
-    #   print(generate_datasets("3H",'temp','hallo'))
+    print(generate_datasets("3H",'temp','hallo'))
 
-    print(get_airtemp("Lufttemperatur"))
+    #print(get_airtemp("Lufttemperatur"))

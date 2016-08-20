@@ -40,7 +40,7 @@ def get_graphs(timeframe, datatype, title):
         y=y,
     )
     ]
-
+'timeframe'
     layout = go.Layout(
         title=title,
         autosize=True,

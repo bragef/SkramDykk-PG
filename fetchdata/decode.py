@@ -142,17 +142,6 @@ class decoder(object):
                 timeseries.append(payload)
         self.datadict['rawtimeseries'] = timeseries
 
-"""
-                (l_seq, l_salt,l_temperature, l_pressuredesibar, l_oxygene, l_fluorescens, l_turbidity ) = line.split()
-                payload = {"seq":int(l_seq[1:]),
-                           "pressure(dBAR)":float(l_pressuredesibar[1:]),
-                           "temp":float(l_temperature[1:]),
-                           "salt":float(l_salt[1:]),
-                           "oxygene": float(l_oxygene[2:]),
-                           "fluorescens":float(l_fluorescens[2:]),
-                           "turbidity":float(l_turbidity[2:])}
-                timeseries.append(payload)
-"""
 
 if __name__ == "__main__":
 
