@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask import render_template
 import pymongo
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import json_util
 import json
 #import logging
@@ -76,7 +76,7 @@ def resampleddayjson(dtype,thisdate):
     month = thisdate[4:6]
     day = thisdate[6:8]
     start = datetime(int(year),int(month),int(day),0,0,0)
-    end = datetime(int(year),int(month),int(day)+1,0,0,0)
+    end = datetime(int(year),int(month),int(day),0,0,0) + timedelta(days=1)
 
     coll = pymongo.MongoClient().saivasdata.resampled
     alldives = []
