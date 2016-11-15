@@ -24,8 +24,16 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
-fromcoll = pymongo.MongoClient().saivasdata.diveinterpolated
-tocoll = pymongo.MongoClient().saivasdata.resampled
+with open("config.json","r") as f:
+    configdata = json.loads(f.read())
+
+client = pymongo.MongoClient()
+mongodb = client[configdata["mongodbname"]]
+fromcoll = mongodb[configdata["interpolatatedcollection"]]
+tocoll = mongodb[configdata["resampledcollection"]]
+
+#fromcoll = pymongo.MongoClient().saivasdata.diveinterpolated
+#tocoll = pymongo.MongoClient().saivasdata.resampled
 
 def updatetimeseries(force=False, timeframe='D', datatype='temp'):
     """ code to resample ALL dives by time
