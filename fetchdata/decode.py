@@ -80,7 +80,7 @@ class decoder(object):
             (r_devicename,r_netstat,r_profileid) = lines[0][1:].split(',')
             (r_depth, r_mode, r_speed ) = lines[1][1:].split(',')
             (r_depth, r_starttime, r_finish, r_nextdate, r_nexttime) = lines[2][1:].split(',')
-            (r_mtilt, r_xtilt, r_ytilt, r_gpsloc, r_temp, r_pressure, r_waterdensity, r_windspeed ) = lines[4][1:].split(',')
+            (r_mtilt, r_xtilt, r_ytilt, r_gpsloc, r_temp, r_airpressure, r_winddirection, r_windspeed ) = lines[4][1:].split(',')
             self.extra_info1 = lines[5]
             self.extra_info2 = lines[6]
             #print(r_devicename,r_netstat, r_profileid, r_depth, r_mode, r_speed, r_windspeed)
@@ -89,7 +89,7 @@ class decoder(object):
         except:
             return {}
 
-        # pull out data from the first lin
+        # pull out data from the first lines
 
         # find the date
         # this is an ugly hack to find the dive datetime! SAIVAS need to fix their clock!
@@ -99,9 +99,9 @@ class decoder(object):
         mm = self.filename[2:4]
         dd = self.filename[4:6]
         ds = str(yyyy+'-'+mm+'-'+dd+"T"+starttime)
-        #print(ds)
-
         self.divedatetime = datetime.strptime(ds,'%Y-%m-%dT%H:%M:%S')
+
+        # get some other stuff
         self.datadict['sessionid'] = uuid.uuid4()
         self.datadict['devicename'] = r_devicename
         self.datadict['profilenumber'] = int(r_profileid.split(':')[1])
@@ -112,6 +112,29 @@ class decoder(object):
         self.datadict['location'] = geolocstring(r_gpsloc)
         self.datadict['filename'] = self.filename
 
+        # new stuff
+                
+        try:
+            self.datadict['windspeed']  = float(r_windspeed.split(":")[1][:-3])
+        except:
+            pass
+
+        try:
+            self.datadict['winddirection']  = float(r_winddirection.split(":")[1][:-1])
+        except:
+            pass
+
+        try:
+            self.datadict['airpressure']  = float(r_airpressure.split(":")[1][:-1])
+        except:
+            pass
+                                                                                            
+        try:
+            self.datadict['windspeed'] = float(r_windspeed.split(":")[1][:-3])
+        except:
+            pass
+        
+        
         # find all the datalines
         timeseries = []
         for line in lines[7:]:
@@ -145,8 +168,8 @@ class decoder(object):
 
 if __name__ == "__main__":
 
-    filename = "15082603.txt"
-    path = "/Users/njberland/PycharmProjects/amalieskram/textfiles/"
+    filename = "16050708.txt"
+    path = "/home/njb/skramdykk/textfiles/"
 
     mydive = decoder(path,filename)
     if mydive.verifydata():

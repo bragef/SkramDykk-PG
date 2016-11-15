@@ -29,14 +29,15 @@ class SaivasServer(object):
     ...
     """
 
-    def __init__(self, ftpserver, username, password, serverdir, storedir):
+    def __init__(self, ftpserver, username, password, serverdir, storedir,database,collection):
         self.ftpserver = ftpserver
         self.username = username
         self.password = password
         self.serverdir = serverdir
         self.storedir = storedir
         self.ftpconn = None
-        self.mongocollection = pymongo.MongoClient().saivasdata.gabrielraw
+        self.mongodb = pymongo.MongoClient()[database]
+        self.mongocollection = self.mongodb[collection]
         return
 
     def make_connection(self):
