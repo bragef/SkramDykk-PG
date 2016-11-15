@@ -1,0 +1,11 @@
+{
+  "LOCALDIR" : "/home/njb/skramdykk/textfiles/",
+  "FTP_SERVER" : "station.saivas.net",
+  "FTP_USERNAME" : "14000000",
+  "FTP_PASSWORD" : "apb5",
+  "FTP_SERVERDIR" : "14000000/ctd",
+  "mongodbname": "saivasdata",
+  "rawcollection": "gabrielraw",
+  "interpolatatedcollection": "diveinterpolated",
+  "resampledcollection": "resampled"
+}
