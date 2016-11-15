@@ -25,8 +25,19 @@ from numpy import nan
 import logging
 import json
 
+# no errorhandling 
+with open("config.json","r") as f:
+    configdata = json.loads(f.read())
+
+client = pymongo.MongoClient()
+mongodb = client[configdata["mongodbname"]]
+fromcoll = mongodb[configdata["rawcollection"]]
+tocoll = mongodb[configdata["interpolatatedcollection"]]
+
 depth_set = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5,
              19.5]
+
+
 
 # get the logging OK
 logger = logging.getLogger()
@@ -36,8 +47,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
-fromcoll = pymongo.MongoClient().saivasdata.gabrielraw
-tocoll = pymongo.MongoClient().saivasdata.diveinterpolated
 
 
 # function to process raw dive data to interpolated data
