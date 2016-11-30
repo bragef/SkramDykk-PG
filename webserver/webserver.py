@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, Response
 from flask import render_template
 import pymongo
 from datetime import datetime, timedelta
@@ -7,11 +7,12 @@ import json
 #import logging
 import plotly
 #import pandas as pd
+from flask_cors import CORS, cross_origin
 
 from utils import generate_datasets, generate_freq, get_airtemp
 
 app = Flask(__name__)
-
+CORS(app)
 
 # the main page
 @app.route('/')
@@ -39,6 +40,26 @@ def allgraphs():
     return render_template('graphview.html',
                            ids=ids,
                            graphJSON=graphJSON)
+
+@app.route('/api/v1/heatmap/<dtype>.json', methods=['GET'])
+def heatmapapi(dtype):
+    mapping = {'temp' : 'temp vs dybde over tid',
+               'oxygene' : 'oksygen vs dybde over tid',
+               'salt' : 'salt vs dybde over tid',
+               'fluorescens' : 'fluorescens vs dybde over tid',
+               'turbidity' : 'turbiditet vs dybde over tid'}
+    graph = generate_datasets('3H', dtype, mapping[dtype])
+    graphJSON = json.dumps(graph, cls=plotly.utils.PlotlyJSONEncoder)
+
+    #js = json.dumps(data)
+
+    resp = Response(graphJSON, status=200, mimetype='application/json')
+    #resp.headers['Link'] = 'http://luisrei.com'
+
+    return resp
+
+    #return graphJSON
+
 
 @app.route('/airtemp')
 def airtempgraphs():
@@ -76,7 +97,7 @@ def resampleddayjson(dtype,thisdate):
     month = thisdate[4:6]
     day = thisdate[6:8]
     start = datetime(int(year),int(month),int(day),0,0,0)
-    end = datetime(int(year),int(month),int(day),0,0,0) + timedelta(days=1)
+    end = start + timedelta(days=1)
 
     coll = pymongo.MongoClient().saivasdata.resampled
     alldives = []
@@ -84,7 +105,10 @@ def resampleddayjson(dtype,thisdate):
     divecursor = coll.find({'timeframe':'3H', 'datatype':dtype,'ts':{'$lt': end, '$gte': start}},
                            {"_id":0, 'timeframe':0}).sort('ts', pymongo.ASCENDING)
     for dive in divecursor:
+        newdive = sorted(dive['divedata'], key=lambda k: k['pressure(dBAR)'])
+        dive['divedata'] = newdive
         alldives.append(dive)
+                        
     return jsonify(alldives) #json.dumps(alldives, default=json_util.default)
 
 # this will return a json doc with all raw dives for a given year
