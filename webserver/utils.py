@@ -25,9 +25,8 @@ def generate_freq(title):
             )
         )
     ]
-
+    
     return graphs
-
 
 def generate_datasets(timeframe, datatype, title):
     coll = pymongo.MongoClient().saivasdata.resampled
