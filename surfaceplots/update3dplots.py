@@ -74,4 +74,4 @@ for g in [{'id': 'temp', 'desc': 'temp vs dybde over tid'},
           {'id': 'fluorescens', 'desc': 'fluorescens vs dybde over tid'},
           {'id': 'turbidity', 'desc': 'turbiditet vs dybde over tid'}, ]:
     fig = get_graphs('3H', g['id'], g['desc'])
-    py.iplot(fig, filename=g['id'] + '-3d-surface')
+    py.plot(fig, filename=g['id'] + '-3d-surface')
