@@ -13,7 +13,6 @@ The work is supported by:
 
 * Amalie Skram VGS - [www.asvgs.no](http://www.asvgs)
 * Universitetet i Bergen - Geofysisk - [www.uib.no](http://www.uib.no)
-* Sensario.no - [www.sensar.io](http://www.sensar.io)
 
 ![Screenshot](https://github.com/njberland/SkramDykk/blob/master/screenshots/Screenshot%20temperature.png "Screenshot")
 
