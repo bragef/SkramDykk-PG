@@ -2,8 +2,8 @@ import pymongo
 import pandas as pd
 
 
-def generate_freq(title):
-    coll = pymongo.MongoClient().saivasdata.gabrielraw
+def generate_freq(title, dbconn):
+    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.gabrielraw
 
     l = list(coll.find(projection={"startdatetime": True, "_id": False}).sort([("startdatetime", pymongo.ASCENDING)]))
     df = pd.DataFrame(l)
@@ -28,8 +28,9 @@ def generate_freq(title):
     
     return graphs
 
-def generate_datasets(timeframe, datatype, title):
-    coll = pymongo.MongoClient().saivasdata.resampled
+
+def generate_datasets(timeframe, datatype, title, dbconn):
+    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.resampled
     tempz = []
     y = []
     x = []
@@ -66,8 +67,8 @@ def generate_datasets(timeframe, datatype, title):
     return graph
 
 
-def get_airtemp(title):
-    coll = pymongo.MongoClient().saivasdata.gabrielraw
+def get_airtemp(title,dbconn):
+    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.gabrielraw
 
     l = list(coll.find(projection={"startdatetime": True, "_id": False, "airtemp": True}).sort(
         [("startdatetime", pymongo.ASCENDING)]))
@@ -75,7 +76,7 @@ def get_airtemp(title):
     df = pd.DataFrame(l)
 
     df.index = df['startdatetime']
-    df = df.drop('startdatetime', 1).sort_index()
+    df = df.drop(labels='startdatetime', axis=1).sort_index()
     df = df.resample('24H').mean()
 
     # print(df)
@@ -95,8 +96,8 @@ def get_airtemp(title):
                 yaxis=dict(
                     title="Temperatur"
                 ),
-                height=1000,
-                width=1200,
+                # height=1000,
+                # width=1200,
                 xaxis=dict(
                     title="Dag"
                 ),

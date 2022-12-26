@@ -27,7 +27,7 @@ logger.setLevel(logging.DEBUG)
 with open("config.json","r") as f:
     configdata = json.loads(f.read())
 
-client = pymongo.MongoClient()
+client = pymongo.MongoClient(configdata["mongoconn"], uuidRepresentation="standard")
 mongodb = client[configdata["mongodbname"]]
 fromcoll = mongodb[configdata["interpolatatedcollection"]]
 tocoll = mongodb[configdata["resampledcollection"]]
@@ -58,13 +58,13 @@ def updatetimeseries(force=False, timeframe='D', datatype='temp'):
         df = pd.DataFrame(list(templist))
         df.index = df['ts']
         df = df.sort_index()
-        df = df.resample(timeframe).mean()
+        df = df.resample(timeframe).mean(numeric_only=True)
         # the the time back as an column
         df['ts'] = df.index
 
         # the following code is an HACK and should be rewritten
         # convert the dataframe to a LIST with dictionaries
-        d = df.to_dict(orient='record')
+        d = df.to_dict('records')
         logger.debug("Resampled %s %s", timeframe, datatype)
         # convert the list into a document that can be stored and store it to Mongo
         for item in d:
@@ -74,9 +74,9 @@ def updatetimeseries(force=False, timeframe='D', datatype='temp'):
                     divedata.append({"pressure(dBAR)":float(key),datatype:value})
 
             new = {'ts': pd.to_datetime(item['ts']), 'timeframe': timeframe, "datatype": datatype, 'divedata':divedata}
-            tocoll.update({"timeframe": timeframe, "datatype": datatype, 'ts': pd.to_datetime(item['ts'])}, new, upsert=True)
-    except:
-        logger.debug("Error creating timeseries %s",datatype)
+            tocoll.update_one({"timeframe": timeframe, "datatype": datatype, 'ts': pd.to_datetime(item['ts'])}, {"$set":new}, upsert=True)
+    except Exception as e:
+        logger.debug("Error creating timeseries %s [%s]",datatype,str(e))
     return
 
 if __name__ == "__main__":

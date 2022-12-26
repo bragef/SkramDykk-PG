@@ -17,6 +17,7 @@ FTP_USERNAME = configdata["FTP_USERNAME"]
 FTP_PASSWORD = configdata["FTP_PASSWORD"]
 FTP_SERVERDIR = configdata["FTP_SERVERDIR"]
 MONGODB = configdata["mongodbname"]
+MONGOCONN = configdata["mongoconn"]
 RAWCOLLECTION = configdata["rawcollection"]
 
 if __name__ == "__main__":
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     # check if the directory exists first and make it if not
     if not os.path.exists(LOCALDIR):
         os.makedirs(LOCALDIR)
-    gabrielserver = SaivasServer(FTP_SERVER,FTP_USERNAME, FTP_PASSWORD, FTP_SERVERDIR, LOCALDIR, MONGODB, RAWCOLLECTION)
+    gabrielserver = SaivasServer(FTP_SERVER,FTP_USERNAME, FTP_PASSWORD, FTP_SERVERDIR, LOCALDIR, MONGOCONN, MONGODB, RAWCOLLECTION)
     gabrielserver.make_connection()
     gabrielserver.fetchdata()
     gabrielserver.decodeall()

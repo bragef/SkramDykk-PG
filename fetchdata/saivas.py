@@ -1,3 +1,4 @@
+
 #
 """ Saivas Module to load data from a saivas server, decode it and store it to mongodb or some cloud service
 
@@ -29,14 +30,14 @@ class SaivasServer(object):
     ...
     """
 
-    def __init__(self, ftpserver, username, password, serverdir, storedir,database,collection):
+    def __init__(self, ftpserver, username, password, serverdir, storedir, connstr, database, collection):
         self.ftpserver = ftpserver
         self.username = username
         self.password = password
         self.serverdir = serverdir
         self.storedir = storedir
         self.ftpconn = None
-        self.mongodb = pymongo.MongoClient()[database]
+        self.mongodb = pymongo.MongoClient(connstr, uuidRepresentation="standard")[database]
         self.mongocollection = self.mongodb[collection]
         return
 
@@ -45,6 +46,7 @@ class SaivasServer(object):
         return self.ftpconn.login(self.username, self.password)
 
     def fetchdata(self):
+
         # open the server and change to correct directory
         # list all files
         logger.debug("Connecting to FTP server")
@@ -80,7 +82,7 @@ class SaivasServer(object):
         return arrow.get(yyyy + '-' + mm + '-' + dd, 'YYYY-MM-DD')
 
     def storedentries(self):
-        return (self.mongocollection.find().count())
+        return (self.mongocollection.count_documents({}))
 
     def decodeall(self):
         """
@@ -95,13 +97,13 @@ class SaivasServer(object):
                         mydive.decode()
                         # print(mydive.datadict)
                         if "profilenumber" in mydive.datadict:
-                            hits = self.mongocollection.find({"profilenumber": mydive.datadict["profilenumber"]})
-                            # print("Count at database ", hits.count())
-                            if hits.count() == 0:
+                            # hits = self.mongocollection.find({"profilenumber": mydive.datadict["profilenumber"]})
+                            # print("Count at database ", hits.count_documents())
+                            if self.mongocollection.count_documents({"profilenumber": mydive.datadict["profilenumber"]})==0:
                                 self.mongocollection.insert_one(mydive.datadict)
                                 logger.debug('Saved %s to mongodb', mydive.datadict["profilenumber"])
-                except:
-                    logger.debug('Error decoding %s', entry)
+                except Exception as e:
+                    logger.debug('Error decoding %s (%s)', entry, str(e))
 
 if __name__ == "__main__":
     FTPSERVER = "station.saivas.net"

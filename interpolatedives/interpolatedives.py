@@ -29,7 +29,7 @@ import json
 with open("config.json","r") as f:
     configdata = json.loads(f.read())
 
-client = pymongo.MongoClient()
+client = pymongo.MongoClient(configdata["mongoconn"], uuidRepresentation="standard")
 mongodb = client[configdata["mongodbname"]]
 fromcoll = mongodb[configdata["rawcollection"]]
 tocoll = mongodb[configdata["interpolatatedcollection"]]
@@ -60,7 +60,7 @@ def processraw(force=False):
 
         rawdata = cursor["rawtimeseries"]
         sessionid = cursor['sessionid']
-        if tocoll.find({'sessionid':sessionid}).limit(1).count() == 0 or force:
+        if tocoll.count_documents({'sessionid':sessionid}) == 0 or force:
             # create a Pandas Dataframe
             df = pd.DataFrame(list(rawdata))
 
@@ -73,7 +73,7 @@ def processraw(force=False):
             # and now we should interpolate each observation
             for x in depth_set:
                 if x not in df.index and x < df.index.max():
-                    df.ix[x] = nan
+                    df.loc[x] = nan
             df = df.sort_index()
             df = df.interpolate(method='index', axis=0).ffill(axis=0).bfill(axis=0)
 
@@ -88,7 +88,7 @@ def processraw(force=False):
             newdata['timeseries'] = json.loads(json_data)
 
             # print(newdata)
-            tocoll.update({'sessionid': newdata['sessionid']}, newdata, upsert=True)
+            tocoll.update_many({'sessionid': newdata['sessionid']}, {"$set":newdata}, upsert=True)
             count += 1
     return count
 
