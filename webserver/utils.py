@@ -28,6 +28,16 @@ def generate_freq(title, dbconn):
     
     return graphs
 
+def get_valid_years(dbconn):
+    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.gabrielraw
+
+    l = list(coll.find(projection={"startdatetime": True, "_id": False}).sort([("startdatetime", pymongo.ASCENDING)]))
+    df = pd.DataFrame(l)
+    df.index = df['startdatetime']
+    ndf = df.groupby(df.index.year).count()
+
+    return ndf.index.tolist()
+
 
 def generate_datasets(timeframe, datatype, title, dbconn):
     coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.resampled

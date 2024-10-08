@@ -10,7 +10,7 @@ import plotly
 #import pandas as pd
 from flask_cors import CORS, cross_origin
 
-from utils import generate_datasets, generate_freq, get_airtemp
+from utils import generate_datasets, generate_freq, get_airtemp, get_valid_years
 
 with open("../config.json","r") as f:
     configdata = json.loads(f.read())
@@ -22,7 +22,7 @@ app = Flask(__name__)
 # the main page
 @app.route('/')
 def frontpage():
-    return render_template('frontpage.html')
+    return render_template('frontpage.html', valid_years=get_valid_years(MONGOCONN))
     # return 'Gabriel web server'
 
 
@@ -205,10 +205,8 @@ def stats():
 @app.route('/count')
 def count():
     coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.gabrielraw
-    return 'dives {}'.format(coll.find().count())
-
-
+    return 'dives {}'.format(coll.count_documents({}))
 
 if __name__ == "__main__":
     app.config['DEBUG'] = True
-    app.run('0.0.0.0')
+    app.run('0.0.0.0', port=3100)

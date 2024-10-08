@@ -36,8 +36,9 @@ Programmene vil selv hente data fra denne serveren.
 Du kan laste ned data i JSON format for alle typer målinger. Rådata er ikke helt trivielt å jobbe med - men det er selvfølgelig mulig å bruke det til noe dersom du vet hva du gjør. Her er lenker for komplette rådata for årstallene:
 
 <ul>
-    <li><a href="{{ url_for('rawjson', year='2015') }}">2015</a> </li>
-    <li><a href="{{ url_for('rawjson', year='2016') }}">2016</a> </li>
+    {% for yr in valid_years %}
+    <li><a href="{{ url_for('rawjson', year=yr) }}">{{yr}}</a> </li>
+    {% endfor %}
 </ul>
 
 
