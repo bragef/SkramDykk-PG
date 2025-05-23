@@ -1,20 +1,19 @@
-
 #
 """ Saivas Module to load data from a saivas server, decode it and store it to mongodb or some cloud service
-
 (C) 2016 Nils Jacob Berland
-
+Updated to use PostgreSQL by Brage Førland 2025
 """
 
 from ftplib import FTP
 import sys
 import os
 import os.path
-import pymongo
+import psycopg2, psycopg2.extras
 import arrow
-from decode import decoder
-
+from decode import Decoder
 import logging
+
+psycopg2.extras.register_uuid()
 
 logger = logging.getLogger()
 handler = logging.StreamHandler()
@@ -29,16 +28,16 @@ class SaivasServer(object):
     """ A Saivas Server object manage communication with a FTP server from Saivas
     ...
     """
-
-    def __init__(self, ftpserver, username, password, serverdir, storedir, connstr, database, collection):
+    def __init__(self, ftpserver, username, password, serverdir, storedir, connstr):
         self.ftpserver = ftpserver
         self.username = username
         self.password = password
         self.serverdir = serverdir
         self.storedir = storedir
         self.ftpconn = None
-        self.mongodb = pymongo.MongoClient(connstr, uuidRepresentation="standard")[database]
-        self.mongocollection = self.mongodb[collection]
+        self.conn = psycopg2.connect(connstr)
+        self.conn.autocommit = False
+        self.prepare_statements()
         return
 
     def make_connection(self):
@@ -81,29 +80,74 @@ class SaivasServer(object):
         dd = filename[4:6]
         return arrow.get(yyyy + '-' + mm + '-' + dd, 'YYYY-MM-DD')
 
-    def storedentries(self):
-        return (self.mongocollection.count_documents({}))
+    
+    def prepare_statements(self):
+        """Prepare SQL statements for use in the decoding process."""
+        self.check_query = "SELECT COUNT(*) FROM session_data WHERE profilenumber = %s;"
+        self.insert_query = """
+        INSERT INTO session_data (sessionid, devicename, profilenumber, startdatetime, airtemp, location, filename, windspeed, winddirection, airpressure)
+        VALUES (%s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s);
+        """
+        self.insert_timeseries_query = """
+        INSERT INTO raw_timeseries (sessionid, seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
 
     def decodeall(self):
         """
-        Attempt to decode all documents and store them to mongo
+        Attempt to decode all documents and store them to PostgreSQL
         """
         for entry in os.listdir(self.storedir):
             full_path = os.path.join(self.storedir, entry)
             if os.path.isfile(full_path) and entry[0] != '.':
                 try:
-                    mydive = decoder(self.storedir, entry)
+                    mydive = Decoder(self.storedir, entry)
                     if mydive.verifydata():
                         mydive.decode()
-                        # print(mydive.datadict)
                         if "profilenumber" in mydive.datadict:
-                            # hits = self.mongocollection.find({"profilenumber": mydive.datadict["profilenumber"]})
-                            # print("Count at database ", hits.count_documents())
-                            if self.mongocollection.count_documents({"profilenumber": mydive.datadict["profilenumber"]})==0:
-                                self.mongocollection.insert_one(mydive.datadict)
-                                logger.debug('Saved %s to mongodb', mydive.datadict["profilenumber"])
+                            with self.conn.cursor() as cursor:
+                                # Sjekk om 'profilenumber' allerede finnes i databasen
+                                cursor.execute(self.check_query, (mydive.datadict["profilenumber"],))
+                                count = cursor.fetchone()[0]
+                                if count == 0:
+                                    # Sett inn dataene i databasen
+                                    if mydive.datadict.get('location') is not None:
+                                        location_wkt = f'POINT({mydive.datadict["location"]["coordinates"][0]} {mydive.datadict["location"]["coordinates"][1]})'
+                                    else:
+                                        location_wkt = None
+                                    cursor.execute(self.insert_query, (
+                                        mydive.datadict['sessionid'],
+                                        mydive.datadict['devicename'],
+                                        mydive.datadict['profilenumber'],
+                                        mydive.datadict['startdatetime'],
+                                        mydive.datadict.get('airtemp'),
+                                        location_wkt,
+                                        mydive.datadict['filename'],
+                                        mydive.datadict.get('windspeed'),
+                                        mydive.datadict.get('winddirection'),
+                                        mydive.datadict.get('airpressure')
+                                    ))
+                                    for data in mydive.datadict['rawtimeseries']:
+                                        cursor.execute(self.insert_timeseries_query, (
+                                            mydive.datadict['sessionid'],
+                                            data['seq'],
+                                            data.get('salt'),
+                                            data.get('temp'),
+                                            data.get('pressure(dBAR)'),  
+                                            data.get('oxygene'),
+                                            data.get('fluorescens'),
+                                            data.get('turbidity')
+                                        ))
+                                    self.conn.commit()
+                                    logger.debug('Saved %s to PostgreSQL', mydive.datadict["profilenumber"])
                 except Exception as e:
+                    # print(traceback.format_exc())
                     logger.debug('Error decoding %s (%s)', entry, str(e))
+
+    def close(self):
+        self.conn.close()
+
+
 
 if __name__ == "__main__":
     FTPSERVER = "station.saivas.net"

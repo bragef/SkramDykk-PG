@@ -20,7 +20,8 @@ def geolocstring(gpsstr):
         declon = float(lon[1:])/100
         return {"type":"Point", "coordinates":[declat, declon]}
     except:
-        return {}
+        return None 
+
 
 def isfloat(s):
     try:
@@ -29,7 +30,7 @@ def isfloat(s):
         return False
     return True
 
-class decoder(object):
+class Decoder(object):
     def __init__(self, path, filename ):
         self.path = path
         self.filename = filename
@@ -118,17 +119,14 @@ class decoder(object):
             self.datadict['windspeed']  = float(r_windspeed.split(":")[1][:-3])
         except:
             pass
-
         try:
             self.datadict['winddirection']  = float(r_winddirection.split(":")[1][:-1])
         except:
             pass
-
         try:
             self.datadict['airpressure']  = float(r_airpressure.split(":")[1][:-1])
         except:
-            pass
-                                                                                            
+            pass                                                                            
         try:
             self.datadict['windspeed'] = float(r_windspeed.split(":")[1][:-3])
         except:
