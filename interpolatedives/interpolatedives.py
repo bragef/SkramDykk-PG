@@ -59,50 +59,53 @@ def processraw(conn, depth_set, force=False):
         for row in rows_sessions:
             sessionid = row[0]  
             exists = row[1] > 0
-
             if exists == 0 or force:
+                try:
                 # Fetch raw data for the session
-                cursor.execute("""
-                    SELECT seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity 
-                    FROM raw_timeseries WHERE sessionid = %s ORDER BY seq;
-                """, (sessionid,))
-                rows_all  = cursor.fetchall()
-                df = pd.DataFrame(rows_all, columns=[desc.name for desc in cursor.description])
-                # make the pressure the index of the dataframe
-                df.set_index('pressure_dbar', inplace=True)
-                # and get rid of all readings after we have been to the bottom
-                df = df.iloc[:df.index.argmax() + 1]
-                # Interpolere hver observasjon
-                for x in depth_set:
-                    if x not in df.index and x < df.index.max():
-                        df.loc[x] = np.nan
-
-                df.sort_index(inplace=True)
-                df = df.interpolate(method='index', axis=0).ffill(axis=0).bfill(axis=0)
-
-                # Remove rows not in depth_set
-                df = df[df.index.isin(depth_set)]
-
-                # Save iterated values to the database
-                # Note - this is fairly slow, use COPY if you have a lot of data
-                for index, interpolated_row in df.iterrows():
                     cursor.execute("""
-                        INSERT INTO interpolated_timeseries (sessionid, seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
-                    """, (
-                        sessionid,
-                        interpolated_row.get('seq'),  # Juster hvis sekvensnummeret er lagret på en annen måte
-                        interpolated_row.get('salt'),
-                        interpolated_row.get('temperature'),
-                        index,  # trykkverdien brukes som indeks
-                        interpolated_row.get('oxygene'),
-                        interpolated_row.get('fluorescens'),
-                        interpolated_row.get('turbidity')
-                    ))
-                
-                count += 1
-            
-    conn.commit()  # Lagre endringene i databasen
+                        SELECT seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity 
+                        FROM raw_timeseries 
+                        WHERE sessionid = %s ORDER BY seq;
+                    """, (sessionid,))
+                    rows_all  = cursor.fetchall()
+                    df = pd.DataFrame(rows_all, columns=[desc.name for desc in cursor.description])
+                    # make the pressure the index of the dataframe
+                    df.set_index('pressure_dbar', inplace=True)
+                    # and get rid of all readings after we have been to the bottom
+                    df = df.iloc[:df.index.argmax() + 1]
+                    # Interpolere hver observasjon
+                    for x in depth_set:
+                        if x not in df.index and x < df.index.max():
+                            df.loc[x] = np.nan
+
+                    df.sort_index(inplace=True)
+                    df = df.interpolate(method='index', axis=0).ffill(axis=0).bfill(axis=0)
+
+                    # Remove rows not in depth_set
+                    df = df[df.index.isin(depth_set)]
+
+                    # Save iterated values to the database
+                    for index, interpolated_row in df.iterrows():
+                        cursor.execute("""
+                            INSERT INTO interpolated_timeseries (sessionid, seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+                        """, (
+                            sessionid,
+                            interpolated_row.get('seq'),  
+                            interpolated_row.get('salt'),
+                            interpolated_row.get('temperature'),
+                            index, 
+                            interpolated_row.get('oxygene'),
+                            interpolated_row.get('fluorescens'),
+                            interpolated_row.get('turbidity')
+                        ))
+                    
+                    count += 1
+                    # logger.debug("Processed session %s with %d interpolated readings", sessionid, len(df))
+                except Exception as e:
+                    logger.error("Error processing session %s: %s", sessionid, e)
+                    continue            
+    conn.commit() 
     return count
 
 
