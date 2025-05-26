@@ -1,21 +1,25 @@
-import pymongo
+import psycopg2
 import pandas as pd
 
-
 def generate_freq(title, dbconn):
-    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.gabrielraw
-
-    l = list(coll.find(projection={"startdatetime": True, "_id": False}).sort([("startdatetime", pymongo.ASCENDING)]))
-    df = pd.DataFrame(l)
-    df.index = df['startdatetime']
-    ndf = df.groupby(df.index.date).count()
-
+    with psycopg2.connect(dbconn) as conn:
+        with conn.cursor() as cur:
+            # Fetch the number of dives per day
+            cur.execute("""
+                        SELECT DATE(startdatetime), COUNT(sessionid) as dives 
+                        FROM session_data 
+                        GROUP BY DATE(startdatetime) 
+                        ORDER BY DATE(startdatetime);
+            """)
+            rows = cur.fetchall()
+    dates = [row[0] for row in rows]
+    counts = [row[1] for row in rows]
     graphs = [
         dict(
             data=[
                 dict(
-                    x=ndf.index,
-                    y=ndf['startdatetime'],
+                    x=dates,
+                    y=counts,
                     type='Scatter',
                     mode='markers'
                 ),
@@ -25,40 +29,63 @@ def generate_freq(title, dbconn):
             )
         )
     ]
-    
     return graphs
 
 def get_valid_years(dbconn):
-    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.gabrielraw
-
-    l = list(coll.find(projection={"startdatetime": True, "_id": False}).sort([("startdatetime", pymongo.ASCENDING)]))
-    df = pd.DataFrame(l)
-    df.index = df['startdatetime']
-    ndf = df.groupby(df.index.year).count()
-
-    return ndf.index.tolist()
-
+    with psycopg2.connect(dbconn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        SELECT DISTINCT EXTRACT(year FROM startdatetime) as YR FROM session_data ORDER BY YR;
+            """)
+            years = [int(row[0]) for row in cur.fetchall()]
+    return years
 
 def generate_datasets(timeframe, datatype, title, dbconn):
-    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.resampled
-    tempz = []
-    y = []
-    x = []
-    for curs in coll.find({"timeframe": timeframe, "datatype": datatype}).sort("ts", pymongo.ASCENDING):
-        # print(curs)
+    timeframe_sql_map = {
+        "3H": "3 hours",
+        "6H": "6 hours",
+        "12H": "12 hours",
+        "1D": "1 day",
+        "1W": "1 week",
+        "1M": "1 month"
+    }
+    valid_datatypes = [ "temperature", "salt", "fluorescens", "turbidity", "oxygene"]
+    if datatype == "temp":
+        datatype = "temperature"  
 
-        col = []
-        # sort the list so the dictionaries are sorted according to pressure
-        newlist = sorted(curs['divedata'], key=lambda k: -k['pressure(dBAR)'])
-        for i in newlist:
-            col.append(i[datatype])
-            if -i['pressure(dBAR)'] not in y:
-                y.append(-i['pressure(dBAR)'])
+    # Error handling for invalid timeframe or datatype
+    if timeframe not in timeframe_sql_map:
+        raise ValueError(f"Invalid timeframe: {timeframe}. Valid options are: {list(timeframe_sql_map.keys())}")
+    if datatype not in valid_datatypes:
+        raise ValueError(f"Invalid datatype: {datatype}. Valid options are: {valid_datatypes}")
 
-        tempz.append(col)
-        x.append(curs['ts'])
-    z = list(map(list, zip(*tempz)))
-    y = sorted(y)
+    with psycopg2.connect(dbconn) as conn:
+        with conn.cursor() as cur:
+            # Fetch the data for the specified timeframe and datatype
+            cur.execute(f"""
+                        SELECT AVG({datatype}) as val, pressure_dbar, 
+                        date_bin('{timeframe_sql_map[timeframe]}', startdatetime, '2001-01-01 00:00') as ts
+                        FROM interpolated_timeseries 
+                        JOIN session_data USING(sessionid)
+                        -- WHERE STARTDATETIME >= '2022-01-01 00:00:00'
+                        GROUP BY pressure_dbar, ts
+                        ORDER BY ts, pressure_dbar DESC;
+            """)
+            rows = cur.fetchall()
+
+    df = pd.DataFrame(rows, columns=[desc.name for desc in cur.description])
+    df2 = df.pivot(index='pressure_dbar', columns='ts', values='val')
+
+    # Fill inn missing periods with NaN to make plotly happy
+    df2 = df2.reindex(pd.date_range(start=df2.columns.min(), 
+                                      end=df2.columns.max(), 
+                                      freq=timeframe), 
+                                      axis='columns')
+    df2 = df2.sort_index(axis='columns')   
+
+    x = df2.columns    # timestamps
+    y = (-1 * df2.index).tolist()      # dephths
+    z = df2.values.round(4).tolist()   # values for the datatype
 
     graph = dict(
         data=[
@@ -66,36 +93,47 @@ def generate_datasets(timeframe, datatype, title, dbconn):
                 z=z,
                 x=x,
                 y=y,
-                type='heatmap'
+                type='heatmap',
             ),
         ],
         layout=dict(
-            title=title
+            title=title,
+            connectgaps=False,
+
+            xaxis=dict(
+                title="Tidspunkt",
+                # type="date",
+                # tickformat="%Y-%m-%d %H:%M:%S",
+                # dtick="D1",  # Daily ticks
+                enumerated=True,
+            ),
         )
     )
-
     return graph
 
 
+
 def get_airtemp(title,dbconn):
-    coll = pymongo.MongoClient(dbconn, uuidRepresentation="standard").saivasdata.gabrielraw
-
-    l = list(coll.find(projection={"startdatetime": True, "_id": False, "airtemp": True}).sort(
-        [("startdatetime", pymongo.ASCENDING)]))
-
-    df = pd.DataFrame(l)
-
-    df.index = df['startdatetime']
-    df = df.drop(labels='startdatetime', axis=1).sort_index()
-    df = df.resample('24H').mean()
-
-    # print(df)
+    with psycopg2.connect(dbconn) as conn:
+        with conn.cursor() as cur:
+            # Fetch the average air temperature per day
+            cur.execute("""
+                        SELECT DATE(startdatetime) AS day, AVG(airtemp) AS airtemp 
+                        FROM session_data 
+                        WHERE airtemp IS NOT NULL 
+                        GROUP BY day 
+                        ORDER BY day;
+            """)
+            rows = cur.fetchall()
+    days = [row[0] for row in rows]
+    airtemps = [round(row[1],2) for row in rows]
+    
     graphs = [
         dict(
             data=[
                 dict(
-                    x=df.index,
-                    y=df['airtemp'].tolist(),
+                    x=days,
+                    y=airtemps,
                     type='Scatter',
                     mode='markers'
                 ),
@@ -121,8 +159,5 @@ def get_airtemp(title,dbconn):
 
 
 if __name__ == "__main__":
-    #    print(generate_freq("hallo"))
+    print(generate_datasets("1W",'temperature','hallo', dbconn))
 
-    print(generate_datasets("3H",'temp','hallo'))
-
-    #print(get_airtemp("Lufttemperatur"))
