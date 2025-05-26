@@ -89,7 +89,7 @@ class SaivasServer(object):
         VALUES (%s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s);
         """
         self.insert_timeseries_query = """
-        INSERT INTO raw_timeseries (sessionid, seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity)
+        INSERT INTO raw_timeseries (sessionid, seq, salinity, temperature, pressure_dbar, oxygen, fluorescens, turbidity)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
         """
 

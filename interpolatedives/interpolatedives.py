@@ -7,7 +7,7 @@ Raw data are in the gabriel collection
 Interpolated data are in the dives collection
 
 The dives collection will have data organised as follows:
- * type - oxygene, temp, ...
+ * type - oxygen, temp, ...
  * startdatetime
  * airtemp
  * devicename
@@ -42,7 +42,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
-
 def processraw(conn, depth_set, force=False):
     count = 0
 
@@ -63,7 +62,7 @@ def processraw(conn, depth_set, force=False):
                 try:
                 # Fetch raw data for the session
                     cursor.execute("""
-                        SELECT seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity 
+                        SELECT seq, salinity, temperature, pressure_dbar, oxygen, fluorescens, turbidity 
                         FROM raw_timeseries 
                         WHERE sessionid = %s ORDER BY seq;
                     """, (sessionid,))
@@ -87,15 +86,15 @@ def processraw(conn, depth_set, force=False):
                     # Save iterated values to the database
                     for index, interpolated_row in df.iterrows():
                         cursor.execute("""
-                            INSERT INTO interpolated_timeseries (sessionid, seq, salt, temperature, pressure_dbar, oxygene, fluorescens, turbidity)
+                            INSERT INTO interpolated_timeseries (sessionid, seq, salinity, temperature, pressure_dbar, oxygen, fluorescens, turbidity)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
                         """, (
                             sessionid,
                             interpolated_row.get('seq'),  
-                            interpolated_row.get('salt'),
+                            interpolated_row.get('salinity'),
                             interpolated_row.get('temperature'),
                             index, 
-                            interpolated_row.get('oxygene'),
+                            interpolated_row.get('oxygen'),
                             interpolated_row.get('fluorescens'),
                             interpolated_row.get('turbidity')
                         ))

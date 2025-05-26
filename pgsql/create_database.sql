@@ -1,5 +1,5 @@
 
--- DROP DATABASE saivasdata;
+DROP DATABASE saivasdata;
 
 CREATE DATABASE saivasdata;
 
@@ -25,10 +25,10 @@ CREATE TABLE IF NOT EXISTS raw_timeseries (
     id SERIAL PRIMARY KEY,
     sessionid UUID REFERENCES session_data(sessionid) ON DELETE CASCADE,
     seq INT NOT NULL,
-    salt FLOAT, 
+    salinity FLOAT, 
     temperature FLOAT, 
     pressure_dbar FLOAT NOT NULL,
-    oxygene FLOAT,
+    oxygen FLOAT,
     fluorescens FLOAT,
     turbidity FLOAT
 );
@@ -37,10 +37,10 @@ CREATE TABLE IF NOT EXISTS interpolated_timeseries (
     id SERIAL PRIMARY KEY,
     sessionid UUID NOT NULL REFERENCES session_data(sessionid) ON DELETE CASCADE,
     seq INT NOT NULL,
-    salt FLOAT, 
+    salinity FLOAT, 
     temperature FLOAT, 
     pressure_dbar FLOAT NOT NULL,
-    oxygene FLOAT,
+    oxygen FLOAT,
     fluorescens FLOAT,
     turbidity FLOAT
 );
@@ -51,11 +51,11 @@ CREATE INDEX idx_interpolated_timeseries_sessionid ON interpolated_timeseries(se
 
 
 -- CREATE USER gabriel_read WITH PASSWORD 'your_readonly_password';
--- GRANT CONNECT ON DATABASE saivasdata TO gabriel_read;
--- GRANT SELECT ON ALL TABLES IN SCHEMA public TO gabriel_read;
+GRANT CONNECT ON DATABASE saivasdata TO gabriel_read;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO gabriel_read;
 -- CREATE USER gabriel_update WITH PASSWORD 'your_update_password';
--- GRANT CONNECT ON DATABASE saivasdata TO gabriel_update;
--- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO gabriel_update;
+GRANT CONNECT ON DATABASE saivasdata TO gabriel_update;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO gabriel_update;
 -- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO gabriel_read;
 -- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO gabriel_update;
--- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO gabriel_update ;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO gabriel_update ;
