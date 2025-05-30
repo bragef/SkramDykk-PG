@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, request
 from flask import render_template, send_from_directory
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta
@@ -7,7 +7,7 @@ from bson import json_util
 import json
 import plotly
 
-from utils import generate_datasets, generate_freq, get_airtemp, get_valid_years, get_count, get_resampled_day, names_new_to_old_map, names_old_to_new_map
+from utils import generate_datasets, generate_freq, get_airtemp, get_valid_years, get_count, get_resampled_day, get_datatype_name, names_new_to_old_map
 
 with open("../config.json","r") as f:
     configdata = json.loads(f.read())
@@ -24,9 +24,11 @@ def frontpage():
 
 @app.route('/api/v1/heatmap/<dtype>.json', methods=['GET'])
 def heatmapapi(dtype):
-    mapping = {'temp' : 'temp vs dybde over tid',
-               'oxygene' : 'oksygen vs dybde over tid',
-               'salt' : 'salt vs dybde over tid',
+    dtype = get_datatype_name(dtype)
+
+    mapping = {'temperature' : 'temperatur vs dybde over tid',
+               'oxygen' : 'oksygen vs dybde over tid',
+               'salinity' : 'saltholdighet vs dybde over tid',
                'fluorescens' : 'fluorescens vs dybde over tid',
                'turbidity' : 'turbiditet vs dybde over tid'}
     graph = generate_datasets('3H', dtype, mapping[dtype], PGCONN)
@@ -110,10 +112,7 @@ def airtempgraphs():
 # Note: uses old datatype names (salt, temp, oxygene).  
 @app.route('/resampledday/<dtype>/<thisdate>.json')
 def resampleddayjson(dtype,thisdate):
-    if names_old_to_new_map.get(dtype):
-        dtype_in = dtype
-    else:
-        dtype_in = dtype
+    dtype_in = get_datatype_name(dtype)
     
     df = get_resampled_day(thisdate, dtype_in, '3H', PGCONN)
     if df is None:
@@ -203,6 +202,6 @@ def count():
 
 if __name__ == "__main__":
     app.config['DEBUG'] = True
-    app.run('0.0.0.0', port=3100)
+    app.run('0.0.0.0', port=8074, threaded=True, use_reloader=True)
 
 
