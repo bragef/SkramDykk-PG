@@ -1,0 +1,64 @@
+{
+  "navbar": {
+    "home": "Hjem",
+    "about": "Om",
+    "contact": "Kontakt",
+    "brand": "Gabriel - Last ned data",
+    "language": "language"
+  },
+  "date_picker": {
+    "select_date_range": "Select Date Range"
+  },
+  "data_explanation": {
+    "title": "Data Explanation",
+    "p1": "The graph above shows the number of dives per day based on the selected date range.",
+    "p2": "You can zoom and pan the graph, or use the range slider at the bottom of the graph to select a specific period.",
+    "p3": "The date picker will update according to your selection in the graph, and vice-versa."
+  },
+  "graph": {
+    "title": "Data availability"
+  },
+  "accordion": {
+    "download_resampled_title": "Download resampled data",
+    "depth_range": "Depth Range (m)",
+    "resampling_interval": "Resampling Interval",
+    "depth_data_display": "Depth Data Display",
+    "parameters": "Parameters",
+    "download_format": "Download Format",
+    "download_data": "Download Data",
+    "download_surface_title": "Download surface data",
+    "download_surface_data": "Download Surface Data",
+    "download_raw_title": "Download raw data",
+    "download_raw_data": "Download Raw Data"
+  },
+  "download_formats": {
+    "xlsx": "Excel",
+    "csv": "Comma separated"
+  },
+  "depth_aggregation": {
+    "all_selected": "All selected depths",
+    "average": "Average over depths"
+  },
+  "resampling_intervals": {
+    "all": "All Data",
+    "3H": "3 Hours",
+    "6H": "6 Hours",
+    "12H": "12 Hours",
+    "1D": "24 Hours (Daily)",
+    "1W": "7 Days (Weekly)",
+    "1M": "30 Days (Monthly)"
+  },
+  "parameters": {
+    "oxygen": "Oxygen",
+    "temperature": "Temperature",
+    "turbidity": "Turbidity",
+    "salinity": "Salinity",
+    "fluorescence": "Fluorescence"
+  },
+  "surface_parameters": {
+    "airtemp": "Air Temperature",
+    "windspeed": "Wind Speed",
+    "winddirection": "Wind Direction",
+    "airpressure": "Air Pressure"
+  }
+}

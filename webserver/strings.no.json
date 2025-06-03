@@ -1,0 +1,64 @@
+{
+  "navbar": {
+    "home": "Hjem",
+    "about": "Om",
+    "contact": "Kontakt",
+    "brand": "Gabriel - Last ned data",
+    "language": "Språk"
+  },
+  "date_picker": {
+    "select_date_range": "Velg periode"
+  },
+  "data_explanation": {
+    "title": "Datatilgjengelighet",
+    "p1": "Grafen over viser antall dykk per dag, og viser når det er tilgjengelige data.",
+    "p2": "Du kan zoome og panorere grafen, eller bruke tidsvelgeren nederst for å velge en spesifikk periode.",
+    "p3": "Datovelgeren oppdateres etter ditt valg i grafen, og omvendt."
+  },
+  "graph": {
+    "title": "Datatilgjengelighet"
+  },
+  "accordion": {
+    "download_resampled_title": "Last ned gjennomsnittsdata",
+    "depth_range": "Dypde fra/til (m)",
+    "resampling_interval": "Intervallperiode",
+    "depth_data_display": "Visning av dybde-data",
+    "parameters": "Parametre",
+    "download_format": "Nedlastingsformat",
+    "download_data": "Last ned data",
+    "download_surface_title": "Last ned overflatedata",
+    "download_surface_data": "Last ned overflatedata",
+    "download_raw_title": "Last ned rådata",
+    "download_raw_data": "Last ned rådata"
+  },
+  "download_formats": {
+    "xlsx": "Excel",
+    "csv": "Kommaseparert"
+  },
+  "depth_aggregation": {
+    "all_selected": "Alle valgte dyp",
+    "average": "Gjennomsnitt over dyp"
+  },
+  "resampling_intervals": {
+    "all": "Alle data",
+    "3H": "3 timer",
+    "6H": "6 timer",
+    "12H": "12 timer",
+    "1D": "Døgn",
+    "1W": "Uke",
+    "1M": "Måned"
+  },
+  "parameters": {
+    "oxygen": "Oksygen",
+    "temperature": "Temperatur",
+    "turbidity": "Turbiditet",
+    "salinity": "Saltholdighet",
+    "fluorescence": "Fluorescens"
+  },
+  "surface_parameters": {
+    "airtemp": "Lufttemperatur",
+    "windspeed": "Vindhastighet",
+    "winddirection": "Vindretning",
+    "airpressure": "Lufttrykk"
+  }
+}

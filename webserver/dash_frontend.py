@@ -24,41 +24,59 @@ DBCONN = config["pg_conn"]
 depth_set = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5]
 depth_marks = {str(depth): str(depth) for depth in depth_set}
 
-# --- Original dictionaries, now directly inverted ---
+
+def get_translator(lang_code='no'):
+    """
+    Loads the translation file for the given language code and returns a translation function t().
+    Usage: t = get_translator('no') or t = get_translator('en')
+    """
+    fname = f'strings.{lang_code}.json'
+    path = os.path.join(os.path.dirname(__file__), fname)
+    with open(path, encoding='utf-8') as f:
+        STRINGS = json.load(f)
+    def t(*keys):
+        d = STRINGS
+        for k in keys:
+            d = d[k]
+        return d
+    return t
+
+t = get_translator("no")
+
 resampling_intervals_dict = {
-    'all': 'All Data',
-    '3H': '3 Hours',
-    '6H': '6 Hours',
-    '12H': '12 Hours',
-    '1D': '24 Hours (Daily)',
-    '1W': '7 Days (Weekly)',
-    '1M': '30 Days (Monthly)'
+    'all': t('resampling_intervals', 'all'),
+    '3H': t('resampling_intervals', '3H'),
+    '6H': t('resampling_intervals', '6H'),
+    '12H': t('resampling_intervals', '12H'),
+    '1D': t('resampling_intervals', '1D'),
+    '1W': t('resampling_intervals', '1W'),
+    '1M': t('resampling_intervals', '1M')
 }
 
 depth_aggregation_dict = {
-    "all_selected": "All selected depths",
-    "average": "Average over depths"
+    "all_selected": t('depth_aggregation', 'all_selected'),
+    "average": t('depth_aggregation', 'average')
 }
 
 download_formats_dict = {
-    'xlsx': 'Excel',
-    'csv': 'Comma separated'
+    'xlsx': t('download_formats', 'xlsx'),
+    'csv': t('download_formats', 'csv')
 }
 # --- End of inverted dictionaries ---
 
 parameters_dict = {
-    'oxygen': 'Oxygen',
-    'temperature': 'Temperature',
-    'turbidity': 'Turbidity',
-    'salinity': 'Salinity',
-    'fluorescence': 'Fluorescence'
+    'oxygen': t('parameters', 'oxygen'),
+    'temperature': t('parameters', 'temperature'),
+    'turbidity': t('parameters', 'turbidity'),
+    'salinity': t('parameters', 'salinity'),
+    'fluorescence': t('parameters', 'fluorescence')
 }
 
 surface_parameters_dict = {
-    'airtemp': 'Surface Temperature',  # Changed from 'temperature'
-    'windspeed': 'Wind Speed',
-    'winddirection': 'Wind Direction',
-    'airpressure': 'Air Pressure',  # Added new parameter
+    'airtemp': t('surface_parameters', 'airtemp'),
+    'windspeed': t('surface_parameters', 'windspeed'),
+    'winddirection': t('surface_parameters', 'winddirection'),
+    'airpressure': t('surface_parameters', 'airpressure'),
 }
 
 # Get the list of parameter values for preselection
@@ -78,59 +96,54 @@ app = Dash(__name__,
            requests_pathname_prefix=calculated_routes_pathname_prefix , # Add requests_pathname_prefix
            external_stylesheets=[dbc.themes.FLATLY])
 
-app.title = 'Gabriel - Last ned data'
+app.title = t('navbar', 'brand')
 
 @app.server.errorhandler(404)
 def dash_page_not_found(e):
-    # You can customize this response as needed
     return jsonify(error=404, text=str(e), source="Dash App (dash_frontend.py)"), 404
 
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(dbc.NavbarSimple(
             children=[
-                dbc.NavItem(dbc.NavLink("Hjem", href="#")),
-                dbc.NavItem(dbc.NavLink("Om", href="#")),
-                dbc.NavItem(dbc.NavLink("Kontakt", href="#")),
+                dbc.NavItem(dbc.NavLink(t('navbar', 'home'), href="#")),
+                dbc.NavItem(dbc.NavLink(t('navbar', 'about'), href="#")),
+                dbc.NavItem(dbc.NavLink(t('navbar', 'contact'), href="#")),
             ],
-            brand="Gabriel - Last ned data",
+            brand=t('navbar', 'brand'),
             brand_href="#",
             color="primary",
             dark=True,
         ), width=12)
     ], className="mb-4"),
 
-    dbc.Row([ # Row for Date Picker, Explanation, and Graph
-        dbc.Col(
-            [ # This column now contains a list of cards: Date Picker and Explanation
-                dbc.Card([ # Date Picker Card
-                    dbc.CardHeader(dbc.Label("Select Date Range", className="mb-0")),
-                    dbc.CardBody(
-                        dcc.DatePickerRange(
-                            id='date-picker-range',
-                            start_date=None, # Will be set by callback on initial load
-                            end_date=None,   # Will be set by callback on initial load
-                            display_format='YYYY-MM-DD',
-                            className="form-control"
-                        )
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardHeader(dbc.Label(t('date_picker', 'select_date_range'), className="mb-0")),
+                dbc.CardBody(
+                    dcc.DatePickerRange(
+                        id='date-picker-range',
+                        start_date=None,
+                        end_date=None,
+                        display_format='YYYY-MM-DD',
+                        className="form-control"
                     )
-                ], className="mb-4"), # Added margin below date picker card
+                )
+            ], className="mb-4"),
 
-                dbc.Card([ # Data Explanation Card (moved here)
-                    dbc.CardHeader(html.H5("Data Explanation", className="card-title mb-0")),
-                    dbc.CardBody([
-                        html.P("The graph above shows the number of dives per day based on the selected date range."),
-                        html.P("You can zoom and pan the graph, or use the range slider at the bottom of the graph to select a specific period."),
-                        html.P("The date picker will update according to your selection in the graph, and vice-versa.")
-                    ])
-                ], className="mb-4") # Added margin below explanation card
-            ],
-            width=4
-            # className="mb-4" removed from this Col, as cards now handle their own bottom margin
-        ),
-        dbc.Col( # This column now directly contains only the graph card
-            dbc.Card([ # Graph Card
-                dbc.CardHeader(html.H5("Data availability", className="card-title mb-0")),
+            dbc.Card([
+                dbc.CardHeader(html.H5(t('data_explanation', 'title'), className="card-title mb-0")),
+                dbc.CardBody([
+                    html.P(t('data_explanation', 'p1')),
+                    html.P(t('data_explanation', 'p2')),
+                    html.P(t('data_explanation', 'p3'))
+                ])
+            ], className="mb-4")
+        ], width=4),
+        dbc.Col(
+            dbc.Card([
+                dbc.CardHeader(html.H5(t('graph', 'title'), className="card-title mb-0")),
                 dbc.CardBody(
                     dcc.Graph(
                         id='time-series-graph',
@@ -140,15 +153,15 @@ app.layout = dbc.Container([
             ]),
             width=8
         )
-    ]), # End of Row for Date Picker, Explanation, and Graph
+    ]),
 
-    dbc.Row([ # Accordion Row
+    dbc.Row([
         dbc.Col(
             dbc.Accordion(
                 [
                     dbc.AccordionItem(
                         html.Div([
-                            html.H6("Depth Range (m)"),
+                            html.H6(t('accordion', 'depth_range')),
                             dcc.RangeSlider(
                                 id='depth-range-slider',
                                 min=min(depth_set),
@@ -158,8 +171,7 @@ app.layout = dbc.Container([
                                 value=[min(depth_set), max(depth_set)],
                                 className="mb-3"
                             ),
-
-                            html.H6("Resampling Interval"),
+                            html.H6(t('accordion', 'resampling_interval')),
                             dbc.RadioItems(
                                 id='resampling-interval-radio',
                                 options=[{'label': value, 'value': key} for key, value in resampling_intervals_dict.items()],
@@ -167,8 +179,7 @@ app.layout = dbc.Container([
                                 inline=True,
                                 className="mb-3"
                             ),
-
-                            html.H6("Depth Data Display"),
+                            html.H6(t('accordion', 'depth_data_display')),
                             dbc.RadioItems(
                                 id='depth-aggregation-radio',
                                 options=[{'label': value, 'value': key} for key, value in depth_aggregation_dict.items()],
@@ -176,7 +187,7 @@ app.layout = dbc.Container([
                                 inline=True,
                                 className="mb-3"
                             ),
-                            html.H6("Parameters"),
+                            html.H6(t('accordion', 'parameters')),
                             dbc.Row([
                                 dbc.Col(
                                     dbc.Checklist(
@@ -189,38 +200,36 @@ app.layout = dbc.Container([
                                     width="auto"
                                 )
                             ], className="mb-3 align-items-center"),
-                            html.H6("Download Format"),
+                            html.H6(t('accordion', 'download_format')),
                             dbc.RadioItems(
                                 id='download-format-radio',
                                 options=[{'label': value, 'value': key} for key, value in download_formats_dict.items()],
-                                value='xlsx', # Changed from 'csv'
+                                value='xlsx',
                                 inline=True,
                                 className="mb-3"
                             ),
                             dbc.Button(
-                                "Download Data",
+                                t('accordion', 'download_data'),
                                 id="download-button",
                                 color="primary",
                                 className="mb-3"
                             ),
-                            # --- dcc.Download component for resampled data ---
                             dcc.Download(id="download-resampled-data"),
-                            # html.P("Other content for downloading resampled data will go here."),
                         ]),
-                        title="Download resampled data",
+                        title=t('accordion', 'download_resampled_title'),
                         item_id="item-resampled",
                     ),
                     dbc.AccordionItem(
                         html.Div([
-                            html.H6("Resampling Interval"),
+                            html.H6(t('accordion', 'resampling_interval')),
                             dbc.RadioItems(
                                 id='surface-resampling-interval-radio',
                                 options=[{'label': value, 'value': key} for key, value in resampling_intervals_dict.items()],
-                                value='all',  # Changed from '3H' to 'all'
+                                value='all',
                                 inline=True,
                                 className="mb-3"
                             ),
-                            html.H6("Parameters"),
+                            html.H6(t('accordion', 'parameters')),
                             dbc.Row([
                                 dbc.Col(
                                     dbc.Checklist(
@@ -233,47 +242,44 @@ app.layout = dbc.Container([
                                     width="auto"
                                 )
                             ], className="mb-3 align-items-center"),
-                            html.H6("Download Format"),
+                            html.H6(t('accordion', 'download_format')),
                             dbc.RadioItems(
                                 id='surface-download-format-radio',
                                 options=[{'label': value, 'value': key} for key, value in download_formats_dict.items()],
-                                value='xlsx', # Changed from 'csv'
+                                value='xlsx',
                                 inline=True,
                                 className="mb-3"
                             ),
                             dbc.Button(
-                                "Download Surface Data",
+                                t('accordion', 'download_surface_data'),
                                 id="download-surface-button",
                                 color="primary",
                                 className="mb-3"
                             ),
-                            # --- dcc.Download component for surface data ---
                             dcc.Download(id="download-surface-data"),
-                            #html.P("Content for downloading surface data will go here."),
                         ]),
-                        title="Download surface data",
+                        title=t('accordion', 'download_surface_title'),
                         item_id="item-surface",
                     ),
                     dbc.AccordionItem(
                         html.Div([
-                            html.H6("Download Format"),
+                            html.H6(t('accordion', 'download_format')),
                             dbc.RadioItems(
-                                id='raw-download-format-radio', # New ID
+                                id='raw-download-format-radio',
                                 options=[{'label': value, 'value': key} for key, value in download_formats_dict.items()],
-                                value='xlsx', # Default to Excel
+                                value='xlsx',
                                 inline=True,
                                 className="mb-3"
                             ),
                             dbc.Button(
-                                "Download Raw Data",
-                                id="download-raw-button", # New ID
+                                t('accordion', 'download_raw_data'),
+                                id="download-raw-button",
                                 color="primary",
                                 className="mb-3"
                             ),
-                            dcc.Download(id="download-raw-data"), # New ID
-                            #html.P("Content for downloading raw data will go here.") # Existing, can be removed or updated later
+                            dcc.Download(id="download-raw-data"),
                         ]),
-                        title="Download raw data",
+                        title=t('accordion', 'download_raw_title'),
                         item_id="item-raw",
                     ),
                 ],
@@ -481,7 +487,7 @@ def func_download_raw_data(n_clicks, start_date, end_date, download_format):
         return dcc.send_bytes(buffer.getvalue(), filename=filename)
     
     return no_update
-# --- End Raw Data Download Callback ---
+
 
 # Callback to update the graph and date picker based on user interactions, synchronising
 # the date selector with both range slider and graph selection. Tricky to get all
