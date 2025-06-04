@@ -1,4 +1,4 @@
-DROP DATABASE saivasdata;
+-- DROP DATABASE saivasdata;
 
 CREATE DATABASE saivasdata;
 
