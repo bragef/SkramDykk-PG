@@ -1,4 +1,3 @@
-
 DROP DATABASE saivasdata;
 
 CREATE DATABASE saivasdata;
@@ -29,7 +28,7 @@ CREATE TABLE IF NOT EXISTS raw_timeseries (
     temperature FLOAT, 
     pressure_dbar FLOAT NOT NULL,
     oxygen FLOAT,
-    fluorescens FLOAT,
+    fluorescence FLOAT,
     turbidity FLOAT
 );
 
@@ -41,7 +40,7 @@ CREATE TABLE IF NOT EXISTS interpolated_timeseries (
     temperature FLOAT, 
     pressure_dbar FLOAT NOT NULL,
     oxygen FLOAT,
-    fluorescens FLOAT,
+    fluorescence FLOAT,
     turbidity FLOAT
 );
 

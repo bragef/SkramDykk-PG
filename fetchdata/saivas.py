@@ -8,6 +8,7 @@ from ftplib import FTP
 import sys
 import os
 import os.path
+import time
 import psycopg2, psycopg2.extras
 import arrow
 from decode import Decoder
@@ -89,17 +90,20 @@ class SaivasServer(object):
         VALUES (%s, %s, %s, %s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s, %s);
         """
         self.insert_timeseries_query = """
-        INSERT INTO raw_timeseries (sessionid, seq, salinity, temperature, pressure_dbar, oxygen, fluorescens, turbidity)
+        INSERT INTO raw_timeseries (sessionid, seq, salinity, temperature, pressure_dbar, oxygen, fluorescence, turbidity)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
         """
 
-    def decodeall(self):
+    def decodeall(self, max_age = None):
         """
         Attempt to decode all documents and store them to PostgreSQL
         """
         for entry in os.listdir(self.storedir):
             full_path = os.path.join(self.storedir, entry)
             if os.path.isfile(full_path) and entry[0] != '.':
+                if max_age is not None and time.time() - os.path.getmtime(full_path) > max_age * 24 * 3600:
+                    # print(f"ignore {entry}") 
+                    continue
                 try:
                     mydive = Decoder(self.storedir, entry)
                     if mydive.verifydata():

@@ -10,24 +10,25 @@
     "select_date_range": "Velg periode"
   },
   "data_explanation": {
-    "title": "Datatilgjengelighet",
+    "title": "Velg periode for nedlasting",
     "p1": "Grafen over viser antall dykk per dag, og viser når det er tilgjengelige data.",
     "p2": "Du kan zoome og panorere grafen, eller bruke tidsvelgeren nederst for å velge en spesifikk periode.",
     "p3": "Datovelgeren oppdateres etter ditt valg i grafen, og omvendt."
   },
   "graph": {
-    "title": "Datatilgjengelighet"
+    "title": "Datatilgjengelighet",
+    "dives_in_period": "Antall dykk i valgt periode"
   },
   "accordion": {
-    "download_resampled_title": "Last ned gjennomsnittsdata",
+    "download_resampled_title": "Last ned profildata",
     "depth_range": "Dypde fra/til (m)",
     "resampling_interval": "Intervallperiode",
     "depth_data_display": "Visning av dybde-data",
     "parameters": "Parametre",
     "download_format": "Nedlastingsformat",
     "download_data": "Last ned data",
-    "download_surface_title": "Last ned overflatedata",
-    "download_surface_data": "Last ned overflatedata",
+    "download_surface_title": "Last ned værdata",
+    "download_surface_data": "Last ned værdata",
     "download_raw_title": "Last ned rådata",
     "download_raw_data": "Last ned rådata"
   },
@@ -60,5 +61,15 @@
     "windspeed": "Vindhastighet",
     "winddirection": "Vindretning",
     "airpressure": "Lufttrykk"
+  },
+  "download_status": {
+    "no_data_period_parameters": "Ingen data tilgjengelig for valgt periode og parametre.",
+    "no_session_data_period": "Ingen sesjonsdata tilgjengelig for valgt periode.",
+    "no_raw_timeseries_data_period": "Ingen rå tidsseriedata tilgjengelig for valgt periode."
+  },
+  "sheet_names": {
+    "info": "Info",
+    "session_data": "Sesjonsdata",
+    "raw_timeseries_data": "Rå tidsseriedata"
   }
 }

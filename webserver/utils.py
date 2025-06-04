@@ -650,8 +650,8 @@ def get_data_sessions(dbconn, start_date_str, end_date_str):
 
 def load_config():
     """
-    Searches for config.json in the current directory ("."), parent directory (".."),
-    and grandparent directory ("..."), loads it, and returns a dictionary with the config.
+    Searches for config.json in the current directory (relative to this file), parent, and grandparent directories,
+    loads it, and returns a dictionary with the config.
 
     Returns:
         dict: Configuration data loaded from config.json.
@@ -660,7 +660,8 @@ def load_config():
         FileNotFoundError: If config.json is not found in any of the searched directories.
         json.JSONDecodeError: If config.json is found but cannot be parsed.
     """
-    search_paths = [".", "..", "..."]
+    base_dir = os.path.dirname(__file__)
+    search_paths = [base_dir, os.path.join(base_dir, ".."), os.path.join(base_dir, "..", "..")]
     for path in search_paths:
         config_path = os.path.join(path, "config.json")
         if os.path.exists(config_path):
@@ -669,5 +670,20 @@ def load_config():
                     return json.load(f)
             except json.JSONDecodeError as e:
                 raise json.JSONDecodeError(f"Error parsing {config_path}: {e}")
+    raise FileNotFoundError("config.json not found in any of the searched directories (relative to this file): . , .. , ...")
 
-    raise FileNotFoundError("config.json not found in any of the searched directories: . , .. , ...")
+def load_translator(lang_code='no'):
+    """
+    Loads the translation file for the given language code and returns a translation function t().
+    Usage: t = load_translator('no') or t = load_translator('en')
+    """
+    fname = f'strings.{lang_code}.json'
+    path = os.path.join(os.path.dirname(__file__), fname)
+    with open(path, encoding='utf-8') as f:
+        STRINGS = json.load(f)
+    def t(*keys):
+        d = STRINGS
+        for k in keys:
+            d = d[k]
+        return d
+    return t

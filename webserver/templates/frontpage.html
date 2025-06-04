@@ -10,8 +10,7 @@
 {% block content %}
 <h1>Gabriel hovedside</h1>
 
-Gabriel er en <a
-        href="https://en.wikipedia.org/wiki/CTD_(instrument)">CTD</a> som ligger i Store Lungegårdsvannet - Bergen.
+Gabriel er en <a ref="https://en.wikipedia.org/wiki/CTD_(instrument)">CTD</a> som ligger i Store Lungegårdsvannet - Bergen.
 Bøyen logger data om temperatur, salt, mm. med jevne mellomrom.
 
 Denne nettsiden er designet for å gjøre det enklere å visualisere data fra Gabriel.
@@ -20,37 +19,16 @@ Serveren som kjører nettsiden henter data fra Gabriel med jevne mellomrom så d
 For å komme fort i gang med å anbefaler vi så se på <a href="{{ url_for('allgraphs') }}">grafene</a>.
 Grafene gir deg anledning til å zoome inn og vise detaljer. Oppløsningen på dataene er hver 3 time!
 
+<!--
 Videre er det mulig å laste ned data fra server til programmer du kan kan kjøre selv.
 Disse programmene ligger på <a href="https://github.com/njberland/SkramDykk/tree/master/notebooks">Skramdykk notebooks</a>.
 Programmene vil selv hente data fra denne serveren.
+-->
 
 <h2>Grafer</h2>
 
 <a href="{{ url_for('allgraphs') }}">Grafene i 2D for alle typer målinger for hele levetiden til Gabriel
 </a>
-
-
-
-<h2>Data for nedlastning</h2>
-
-Du kan laste ned data i JSON format for alle typer målinger. Rådata er ikke helt trivielt å jobbe med - men det er selvfølgelig mulig å bruke det til noe dersom du vet hva du gjør. Her er lenker for komplette rådata for årstallene:
-
-<ul>
-    {% for yr in valid_years %}
-    <li><a href="{{ url_for('rawjson', year=yr) }}">{{yr}}</a> </li>
-    {% endfor %}
-</ul>
-
-
-Det enkleste er å laste ned data som både er interpolert og "resampled" til hver 3. time. Disse datasettene er for en observasjonstype av gangen:
-
-<ul>
-    <li><a href="{{ url_for('resampledjson', dtype='temp') }}">Temperatur</a> </li>
-    <li><a href="{{ url_for('resampledjson', dtype='oxygene') }}">Oksygen</a> </li>
-    <li><a href="{{ url_for('resampledjson', dtype='salt') }}">Salt</a> </li>
-    <li><a href="{{ url_for('resampledjson', dtype='fluorescens') }}">Fluorescens</a> </li>
-    <li><a href="{{ url_for('resampledjson', dtype='turbidity') }}">Turbiditet</a> </li>
-</ul>
 
 
 <h2>Statistikk for dykkene</h2>
@@ -67,12 +45,5 @@ Det enkleste er å laste ned data som både er interpolert og "resampled" til hv
 
 All kode ligger på <a href="https://github.com/njberland/SkramDykk">GitHub</a>
 
-<h2>3D grafer</h2>
-
-<a href="https://dashboards.ly/ua-mqz9njU4cMFZCsLZNBHCsi">Alle 3D grafer for temperatur, oksygen, salt, turbiditet og fluorescens</a>
-
-
-
-<iframe width="1200" height="1000" frameborder="0" scrolling="no" src="https://plot.ly/~njberland/79.embed"></iframe>
 
 {% endblock %}

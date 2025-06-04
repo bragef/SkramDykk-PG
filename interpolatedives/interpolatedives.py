@@ -62,7 +62,7 @@ def processraw(conn, depth_set, force=False):
                 try:
                 # Fetch raw data for the session
                     cursor.execute("""
-                        SELECT seq, salinity, temperature, pressure_dbar, oxygen, fluorescens, turbidity 
+                        SELECT seq, salinity, temperature, pressure_dbar, oxygen, fluorescence, turbidity 
                         FROM raw_timeseries 
                         WHERE sessionid = %s ORDER BY seq;
                     """, (sessionid,))
@@ -86,7 +86,7 @@ def processraw(conn, depth_set, force=False):
                     # Save iterated values to the database
                     for index, interpolated_row in df.iterrows():
                         cursor.execute("""
-                            INSERT INTO interpolated_timeseries (sessionid, seq, salinity, temperature, pressure_dbar, oxygen, fluorescens, turbidity)
+                            INSERT INTO interpolated_timeseries (sessionid, seq, salinity, temperature, pressure_dbar, oxygen, fluorescence, turbidity)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
                         """, (
                             sessionid,
@@ -95,7 +95,7 @@ def processraw(conn, depth_set, force=False):
                             interpolated_row.get('temperature'),
                             index, 
                             interpolated_row.get('oxygen'),
-                            interpolated_row.get('fluorescens'),
+                            interpolated_row.get('fluorescence'),
                             interpolated_row.get('turbidity')
                         ))
                     

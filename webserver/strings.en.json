@@ -16,7 +16,8 @@
     "p3": "The date picker will update according to your selection in the graph, and vice-versa."
   },
   "graph": {
-    "title": "Data availability"
+    "title": "Data availability",
+    "dives_in_period": "Number of dives in selected period"
   },
   "accordion": {
     "download_resampled_title": "Download resampled data",
@@ -60,5 +61,15 @@
     "windspeed": "Wind Speed",
     "winddirection": "Wind Direction",
     "airpressure": "Air Pressure"
+  },
+  "download_status": {
+    "no_data_period_parameters": "No data available for the selected period and parameters.",
+    "no_session_data_period": "No session data available for the selected period.",
+    "no_raw_timeseries_data_period": "No raw timeseries data available for the selected period."
+  },
+  "sheet_names": {
+    "info": "Info",
+    "session_data": "Session Data",
+    "raw_timeseries_data": "Raw Timeseries Data"
   }
 }

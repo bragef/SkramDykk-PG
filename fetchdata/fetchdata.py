@@ -4,6 +4,7 @@
 
 """
 import os
+import argparse
 from saivas import SaivasServer
 import json
 
@@ -18,6 +19,10 @@ FTP_PASSWORD = configdata["FTP_PASSWORD"]
 FTP_SERVERDIR = configdata["FTP_SERVERDIR"]
 PG_CONN = configdata["pg_conn"]
 
+parser =  argparse.ArgumentParser();
+parser.add_argument('--max-age', type=int, help='Ignore files older than max-age days')
+max_age = parser.parse_args().max_age
+
 if __name__ == "__main__":
 
     # check if the directory exists first and make it if not
@@ -26,7 +31,8 @@ if __name__ == "__main__":
     gabrielserver = SaivasServer(FTP_SERVER,FTP_USERNAME, FTP_PASSWORD, FTP_SERVERDIR, LOCALDIR, PG_CONN)
     gabrielserver.make_connection()
     gabrielserver.fetchdata()
-    gabrielserver.decodeall()
+    gabrielserver.decodeall(max_age)
+    # gabrielserver.decodeall()
 
 
 
