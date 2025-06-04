@@ -1,0 +1,8 @@
+{
+    "LOCALDIR" : "/local/webdata/gabriel/textfiles/",
+    "FTP_SERVER" : "station.saivas.net",
+    "FTP_USERNAME" : "",
+    "FTP_PASSWORD" : "",
+    "FTP_SERVERDIR" : "",
+    "pg_conn": "postgresql://gabriel_update:password@localhost:5432/saivasdata",
+}

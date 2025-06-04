@@ -1,68 +1,85 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, jsonify, Response
-from flask import render_template
-import pymongo
+from flask import Flask, jsonify, Response, request
+from flask import render_template, send_from_directory
+from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta
 from bson import json_util
 import json
-#import logging
 import plotly
-#import pandas as pd
-from flask_cors import CORS, cross_origin
+import os
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from download_frontend import DownloadFrontend
 
-from utils import generate_datasets, generate_freq, get_airtemp, get_valid_years
+from utils import generate_datasets, generate_freq, get_airtemp, get_valid_years, get_count, get_resampled_day, get_freq
+from utils import get_datatype_name, names_new_to_old_map, load_config
 
-with open("../config.json","r") as f:
-    configdata = json.loads(f.read())
-    MONGOCONN=configdata['mongoconn']
+configdata = load_config()
+PGCONN=configdata['pg_conn']
 
-app = Flask(__name__)
-#CORS(app)
+app = Flask(__name__) # Changed from main_app
+# CORS(app)  # Handled by server config
+
+# We add the new download frontend to the original Flask app.
+# (These are not dependent on the main app, and can be used independently)
+global_prefix = os.environ.get('SCRIPT_NAME', '').rstrip('/')
+download_frontend_no = DownloadFrontend(PGCONN, language='no', requests_pathname_prefix = global_prefix + '/download/')
+download_frontend_en = DownloadFrontend(PGCONN, language='en', requests_pathname_prefix = global_prefix + '/download/en/')
+
+# Remember no trailing slashes!
+app.wsgi_app = DispatcherMiddleware(
+    app.wsgi_app, {
+    '/download': download_frontend_no.app.server,  
+    '/download/en': download_frontend_en.app.server,
+})
 
 # the main page
 @app.route('/')
 def frontpage():
-    return render_template('frontpage.html', valid_years=get_valid_years(MONGOCONN))
-    # return 'Gabriel web server'
+    return render_template('frontpage.html', valid_years=get_valid_years(PGCONN))
 
 
 @app.route('/api/v1/heatmap/<dtype>.json', methods=['GET'])
 def heatmapapi(dtype):
-    mapping = {'temp' : 'temp vs dybde over tid',
-               'oxygene' : 'oksygen vs dybde over tid',
-               'salt' : 'salt vs dybde over tid',
-               'fluorescens' : 'fluorescens vs dybde over tid',
-               'turbidity' : 'turbiditet vs dybde over tid'}
-    graph = generate_datasets('3H', dtype, mapping[dtype], MONGOCONN)
-    graphJSON = json.dumps(graph, cls=plotly.utils.PlotlyJSONEncoder)
+    try: 
+        dtype = get_datatype_name(dtype)
 
-    #js = json.dumps(data)
+        mapping = {'temperature' : 'temperatur vs dybde over tid',
+                   'oxygen' : 'oksygen vs dybde over tid',
+                   'salinity' : 'saltholdighet vs dybde over tid',
+                   'fluorescence' : 'fluorescens vs dybde over tid',
+                   'turbidity' : 'turbiditet vs dybde over tid'}
+        graph = generate_datasets('3H', dtype, mapping[dtype], PGCONN)
+        graphJSON = json.dumps(graph, cls=plotly.utils.PlotlyJSONEncoder)
 
-    resp = Response(graphJSON, status=200, mimetype='application/json')
-    #resp.headers['Link'] = 'http://luisrei.com'
+        resp = Response(graphJSON, status=200, mimetype='application/json')
+    except Exception as e:
+        error_message = {
+            "error": "An error occurred while processing your request.",
+            "message": repr(e)
+        }
+        resp = Response(json.dumps(error_message), status=500, mimetype='application/json')
 
     return resp
-
-    #return graphJSON
 
 
 @app.route('/api/v1/graph/airtemp.json')
 def airtempgraphsapi():
 
     g = {'id': 'Lufttemperatur', 'desc': 'Lufttemperatur gjennomsnitt pr døgn'}
-    graph = get_airtemp(g['desc'],MONGOCONN)
+    graph = get_airtemp(g['desc'],PGCONN)
 
     graphJSON = json.dumps(graph[0], cls=plotly.utils.PlotlyJSONEncoder)
     resp = Response(graphJSON, status=200, mimetype='application/json')
 
     return resp
 
+
 @app.route('/api/v1/graph/stats.json')
 def statsapi():
     ids = []
     graphs = []
     g ={'id': 'Freq', 'desc': 'Dykk pr dag'}
-    graph = generate_freq(g['desc'],MONGOCONN)
+    graph = generate_freq(g['desc'],PGCONN)
 
     graphJSON = json.dumps(graph[0], cls=plotly.utils.PlotlyJSONEncoder)
     resp = Response(graphJSON, status=200, mimetype='application/json')
@@ -77,12 +94,12 @@ def statsapi():
 def allgraphs():
     ids = []
     graphs = []
-    for g in [{'id': 'temp', 'desc': 'temp vs dybde over tid'},
-              {'id': 'oxygene', 'desc': 'oksygen vs dybde over tid'},
-              {'id': 'salt', 'desc': 'salt vs dybde over tid'},
-              {'id': 'fluorescens', 'desc': 'fluorescens vs dybde over tid'},
+    for g in [{'id': 'temperature', 'desc': 'temp vs dybde over tid'},
+              {'id': 'oxygen', 'desc': 'oksygen vs dybde over tid'},
+              {'id': 'salinity', 'desc': 'salt vs dybde over tid'},
+              {'id': 'fluorescence', 'desc': 'fluorescens vs dybde over tid'},
               {'id': 'turbidity', 'desc': 'turbiditet vs dybde over tid'}, ]:
-        graph = generate_datasets('3H', g['id'], g['desc'],MONGOCONN)
+        graph = generate_datasets('3H', g['id'], g['desc'],PGCONN)
         ids.append(g['id'])
         graphs.append(graph)
 
@@ -92,18 +109,16 @@ def allgraphs():
                            graphJSON=graphJSON)
 
 
-
 @app.route('/static/<path:path>')
 def send_template(path):
     return send_from_directory('static', path)
 
 @app.route('/airtemp')
 def airtempgraphs():
-
     ids = []
     graphs = []
     for g in [{'id': 'Lufttemperatur', 'desc': 'Lufttemperatur gjennomsnitt pr døgn'},]:
-        graph = get_airtemp(g['desc'], MONGOCONN)
+        graph = get_airtemp(g['desc'], PGCONN)
         ids.append(g['id'])
         graphs.append(graph[0])
 
@@ -112,86 +127,37 @@ def airtempgraphs():
                            ids=ids,
                            graphJSON=graphJSON)
 
-# this will return a json doc with ALL observations resampled and interpolated for a given datatype
-@app.route('/resampled/<dtype>.json')
-def resampledjson(dtype):
-    coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.resampled
-    alldives = []
-    # get all dives for a timeframe and datatype
-    divecursor = coll.find({'timeframe':'3H', 'datatype':dtype},{"_id":0}).sort('ts', pymongo.ASCENDING)
-    for dive in divecursor:
-        alldives.append(dive)
-    return jsonify(alldives) #json.dumps(alldives, default=json_util.default)
-
 
 # return a json doc with all observations for a given type on a given day
-# the day format must be YYYYMMDD this will return a json doc with ALL observations resampled and interpolated for a given datatype
+# the day format must be YYYYMMDD this will return a json doc with ALL observations 
+# resampled and interpolated for a given datatype.
+# (In use from ektedata.uib.no, keep for compatibility)
+# Note: uses old (v1) datatype names (salt, temp, oxygene).  
 @app.route('/resampledday/<dtype>/<thisdate>.json')
 def resampleddayjson(dtype,thisdate):
-    print("hello")
-    year = thisdate[0:4]
-    month = thisdate[4:6]
-    day = thisdate[6:8]
-    start = datetime(int(year),int(month),int(day),0,0,0)
-    end = start + timedelta(days=1)
+    dtype_in = get_datatype_name(dtype)
+    
+    df = get_resampled_day(thisdate, dtype_in, '3H', PGCONN)
+    if df is None:
+        return jsonify({"error": "Invalid date format. Use YYYYMMDD."}), 400
 
-    coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.resampled
-    alldives = []
-    # get all dives for a timeframe and datatype
-    divecursor = coll.find({'timeframe':'3H', 'datatype':dtype,'ts':{'$lt': end, '$gte': start}},
-                           {"_id":0, 'timeframe':0}).sort('ts', pymongo.ASCENDING)
-    for dive in divecursor:
-        newdive = sorted(dive['divedata'], key=lambda k: k['pressure(dBAR)'])
-        dive['divedata'] = newdive
-        alldives.append(dive)
-                        
-    return jsonify(alldives) #json.dumps(alldives, default=json_util.default)
-
-# this will return a json doc with all raw dives for a given year
-@app.route('/raw/<year>.json')
-def rawjson(year):
-    # find a from and to statement
-    start = datetime(int(year),1,1,0,0,0)
-    end = datetime(int(year)+1,1,1,0,0,0)
-
-    coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.gabrielraw
-    alldives = []
-    # get all dives for a timeframe and datatype
-    divecursor = coll.find({'startdatetime':{'$lt': end, '$gte': start}},{"_id":0}).sort('startdatetime', pymongo.ASCENDING)
-    for dive in divecursor:
-        alldives.append(dive)
-    return jsonify(alldives) # (alldives, default=json_util.default)
-
-
-@app.route('/dives')
-def dives():
-    coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.gabrielraw
-    cdives = []
-    # get all dives
-    divecursor = coll.find().sort('startdatetime', pymongo.DESCENDING).limit(100)
-    for dive in divecursor:
-        cdives.append(dive)
-    return render_template('listdives.html', dives=cdives)
-
-
-@app.route('/dives/<diveid>')
-def onedive(diveid):
-    coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.gabrielraw
-    searchid = int(diveid)
-    dive = coll.find_one({"profilenumber": searchid})
-    if dive != None:
-        retstring = json.dumps(dive, default=json_util.default)
-        return json.dumps(retstring)  # 'dive number {}'.format(dive['_id'])
-    else:
-        return 'None '
-
+    res = []
+    dtype_out = names_new_to_old_map.get(dtype_in)
+    for index, row in df.iterrows():
+        # Convert the index to a string
+        output_row = {  'datatype': dtype_out, 
+                        'ts' :index.strftime('%Y-%m-%d %H:%M:%S'),
+                        'divedata': [ {'pressure(dBAR)':k,dtype_out:v} for k,v in row.items() ] 
+                    } 
+        res.append(output_row)
+    return jsonify(res)
 
 @app.route('/stats')
 def stats():
     ids = []
     graphs = []
     for g in [{'id': 'Freq', 'desc': 'Dykk pr dag'},]:
-        graph = generate_freq(g['desc'],MONGOCONN)
+        graph = generate_freq(g['desc'],PGCONN)
         ids.append(g['id'])
         graphs.append(graph[0])
 
@@ -200,13 +166,20 @@ def stats():
                            ids=ids,
                            graphJSON=graphJSON)
 
+@app.route('/api/v2/stats')
+def dives():
+    dives = get_freq(PGCONN,format="csv")
+    resp = Response(dives, status=200, mimetype='text/csv')
+    return resp 
+
 
 # resource that tells how many dives are in the DB
 @app.route('/count')
 def count():
-    coll = pymongo.MongoClient(MONGOCONN, uuidRepresentation="standard").saivasdata.gabrielraw
-    return 'dives {}'.format(coll.count_documents({}))
+    return 'dives {}'.format(get_count(PGCONN))
 
 if __name__ == "__main__":
-    app.config['DEBUG'] = True
-    app.run('0.0.0.0', port=3100)
+    app.config['DEBUG'] = True # Changed from dispatcher_app.config
+    app.run('0.0.0.0', port=8076, threaded=True, use_reloader=True) # Changed from dispatcher_app.run
+
+
